@@ -58,13 +58,11 @@ login({email: secret.email, password: secret.password }, function callback (err,
         //fetching stuff from db
         setInterval(function(){
             sendDB.forEach(function (data){
-                console.log("picture:"+data.picture)
-                console.log("text:"+data.text)
                     if( data.senderId != "user" && data.picture != lastLine  && (data.text == null || data.text == "")){
                         api.sendMessage(data.picture, message.threadID);
                         lastLine = data.picture;
                     }
-                    else if( data.senderId != "user" && data.text!=lastLine && (data.picture == null || data.picture == "")){
+                    else if( data.senderId != "user" && data.text != lastLine && (data.picture == null || data.picture == "")){
                         api.sendMessage(data.text, message.threadID);
                         lastLine = data.text;
                     }
@@ -122,7 +120,8 @@ login({email: secret.email, password: secret.password }, function callback (err,
                 userDB[message.threadID].questionAsked = false;
         }else if(message.body.indexOf("explanation") != -1 && userDB[message.threadID].question !== ''){ //redirects poor answers back to db
             if(userDB[message.threadID].question != null && userDB[message.threadID].question.indexOf("http") != 1) {
-                firebase.database().ref('/subjects/'+message.threadID).push({
+                console.log(userDB[message.threadID].question);
+                firebase.database().ref('/subjects/'+userDB[message.threadID].subject+'/'+message.threadID).push({
                     "picture" : "",
                     "text" :  userDB[message.threadID].question,
                     "senderId" : "user"
@@ -143,8 +142,8 @@ login({email: secret.email, password: secret.password }, function callback (err,
                 if(err) throw err;
                 var ans;                
                 try{
-        			ans = result[1].subpods[0].value;
-        			if(ans !== "" && ans !== null) //if wolfram cannot give an answer
+                    ans = result[1].subpods[0].value;
+                    if(ans !== "" && ans !== null) //if wolfram cannot give an answer
                         api.sendMessage(result[1].subpods[0].value,message.threadID);
                     else {
                             api.sendMessage("We are handing off your question to a tutor. Standby please.",message.threadID);
@@ -157,18 +156,18 @@ login({email: secret.email, password: secret.password }, function callback (err,
                     }
 
                     userDB[message.threadID].questionAsked = false;
-        		} catch (e) { //handling problem with query
-        			api.sendMessage("We are handing off your question to a tutor. Standby please.",message.threadID);
+                } catch (e) { //handling problem with query
+                    api.sendMessage("We are handing off your question to a tutor. Standby please.",message.threadID);
                     firebase.database().ref('/subjects/'+userDB[message.threadID].subject+'/'+message.threadID).push(
                         {
                             "picture" : "",
                             "text" : message.body,
                             "senderId" : "user"
-                        });	
+                        }); 
 
                     userDB[message.threadID].questionAsked = false;
-        		}
-        	});
+                }
+            });
         } else if (message.body == "clear") {
             api.sendMessage("refresh page to clear the chat",message.threadID, function messageSent(err,messageInfo) {
                 api.deleteThread(message.threadID);
